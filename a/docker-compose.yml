@@ -1,0 +1,57 @@
+x-build: &dockerfile-dev-build
+  context: .
+  dockerfile: Dockerfile.dev
+
+services:
+  db:
+    image: "mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04"
+    environment:
+      SA_PASSWORD: "Password1"
+      ACCEPT_EULA: "Y"
+      # Developer / Express / Standard / Enterprise  / EnterpriseCore
+      MSSQL_PID: Developer
+      MSSQL_TCP_PORT: 1433
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app-development:
+    build: *dockerfile-dev-build
+    env_file:
+      - .env.development
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+#    depends_on:
+#      db:
+#        condition: service_healthy
+#      rabbitmq:
+#        condition: service_healthy
+    command: [ "./scripts/start-web-development.sh" ]
+
+  tests:
+    build: *dockerfile-dev-build
+    volumes:
+      - .:/app
+    depends_on:
+      db:
+        condition: service_healthy
+    command: [ "./scripts/start-tests.sh" ]
+
+  lint-formatter:
+    build: *dockerfile-dev-build
+    volumes:
+      - .:/app
+    command: [ "./scripts/start-lint-formatter.sh" ]
