@@ -4,7 +4,9 @@ x-build: &dockerfile-dev-build
 
 services:
   db:
-    image: "mcr.microsoft.com/mssql/server:2022-CU13-ubuntu-22.04"
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    ports:
+      - "1433:1433"    
     environment:
       SA_PASSWORD: "Password1"
       ACCEPT_EULA: "Y"
@@ -12,7 +14,7 @@ services:
       MSSQL_PID: Developer
       MSSQL_TCP_PORT: 1433
     healthcheck:
-      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" -b -o /dev/null
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" -b -o /dev/null
       interval: 10s
       timeout: 3s
       retries: 10
@@ -34,11 +36,11 @@ services:
       - .:/app
     ports:
       - "8000:8000"
-#    depends_on:
-#      db:
-#        condition: service_healthy
-#      rabbitmq:
-#        condition: service_healthy
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     command: [ "./scripts/start-web-development.sh" ]
 
   tests:

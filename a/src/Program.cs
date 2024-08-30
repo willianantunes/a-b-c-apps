@@ -1,5 +1,6 @@
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var solutionSettings = Path.Combine(Directory.GetCurrentDirectory(), "..", "appsettings.json");
@@ -26,11 +27,20 @@ try
     builder.Host.UseSerilog();
     builder.Configuration.AddConfiguration(configuration);
 
+    var connectionStringDatabase = configuration.GetConnectionString("AppDbContext");
+    var connectionStringBroker = configuration.GetConnectionString("Broker");
+    builder.Services.AddDbContext<AppDbContext>(options =>
+    {
+        options.UseSqlServer(connectionStringDatabase);
+    });
+    
     // Add services to the container.
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
     builder.Services.AddEndpointsApiExplorer();
     builder.Services.AddSwaggerGen();
-    builder.Services.AddHealthChecks();
+    builder.Services.AddHealthChecks()
+        .AddSqlServer(connectionStringDatabase!, tags: ["crucial"])
+        .AddRabbitMQ(new Uri(connectionStringBroker!));
 
     var app = builder.Build();
 
@@ -79,15 +89,16 @@ try
         .UseHealthChecks("/healthcheck/integrations",
             new HealthCheckOptions
             {
-                Predicate = targetHealthCheck => targetHealthCheck.Tags.Any(),
+                Predicate = _ => true,
                 AllowCachingResponses = false,
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
 
     app.Run();
 }
-catch (Exception ex)
+catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Microsoft.EntityFrameworkCore.Design")
 {
+    // Why did I have to do this? Check this issue: https://github.com/dotnet/efcore/issues/29923#issuecomment-2092619682
     Log.Fatal(ex, "Host terminated unexpectedly");
 }
 finally
