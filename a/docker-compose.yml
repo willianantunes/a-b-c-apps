@@ -43,10 +43,30 @@ services:
         condition: service_healthy
     command: [ "./scripts/start-web-development.sh" ]
 
-  tests:
+  app-production:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env.development
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test: curl --fail http://localhost:8000/healthcheck/readiness || exit 1
+      interval: 10s
+      timeout: 3s
+
+  integration-tests:
     build: *dockerfile-dev-build
     volumes:
       - .:/app
+    env_file:
+      - .env.development
     depends_on:
       db:
         condition: service_healthy

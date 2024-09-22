@@ -2,8 +2,8 @@ using Microsoft.EntityFrameworkCore;
 
 public class AppDbContext : DbContext
 {
-    public DbSet<User> Players { get; set; }
-    public DbSet<TodoItem> Boards { get; set; }
+    public DbSet<Person> Persons { get; set; }
+    public DbSet<TodoItem> TodoItems { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
@@ -27,13 +27,13 @@ public class AppDbContext : DbContext
         // More details about the EF Fluent API in the following links:
         // https://docs.microsoft.com/en-us/ef/ef6/modeling/code-first/fluent/relationships#configuring-a-many-to-many-relationship
         // https://docs.microsoft.com/en-us/ef/ef6/modeling/code-first/fluent/types-and-properties
-        modelBuilder.Entity<User>(entity =>
+        modelBuilder.Entity<Person>(entity =>
         {
             entity.Property(p => p.Name).IsRequired().HasMaxLength(100);
             entity.HasIndex(p => p.Name).IsUnique();
         });
         modelBuilder.Entity<TodoItem>()
-            .HasOne(todoItem => todoItem.User)
+            .HasOne(todoItem => todoItem.Person)
             .WithMany(user => user.TodoItems)
             .HasForeignKey(todoItem => todoItem.UserId);
     }

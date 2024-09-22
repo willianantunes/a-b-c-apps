@@ -1,2 +1,5 @@
-https://learn.microsoft.com/en-us/aspnet/core/data/ef-mvc/intro?view=aspnetcore-8.0
-https://learn.microsoft.com/en-us/aspnet/core/tutorials/min-web-api?view=aspnetcore-8.0&tabs=visual-studio
+# Letter A
+
+Execute `docker compose up app-production` to start API server in production mode. When the server is running, you can access the API documentation at `http://localhost:8000/swagger`.
+
+This project uses [NDjango Rest Framework](https://github.com/juntossomosmais/NDjango.RestFramework) to expose CRUD operations without generating boilerplate code.

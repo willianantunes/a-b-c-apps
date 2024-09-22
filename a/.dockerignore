@@ -1,0 +1,10 @@
+# https://docs.docker.com/engine/reference/builder/#dockerignore-file
+*
+!src
+!tests
+!*.sln
+!Directory.*.props
+!scripts/*.sh
+!appsettings.json
+**/bin
+**/obj

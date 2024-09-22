@@ -1,6 +1,13 @@
+using System.Reflection;
 using HealthChecks.UI.Client;
+using LetterA.Controllers.V1;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using NDjango.RestFramework.Extensions;
+using NDjango.RestFramework.Serializer;
+using Newtonsoft.Json;
 using Serilog;
 
 var solutionSettings = Path.Combine(Directory.GetCurrentDirectory(), "..", "appsettings.json");
@@ -35,42 +42,55 @@ try
     });
     
     // Add services to the container.
+    builder.Services.AddControllers()
+        .AddNewtonsoftJson(config =>
+        {
+            config.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
+            config.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
+        })
+        .ConfigureValidationResponseFormat();
     // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+    // Update it to another library in the future: https://github.com/dotnet/aspnetcore/issues/54599
     builder.Services.AddEndpointsApiExplorer();
-    builder.Services.AddSwaggerGen();
+    builder.Services.AddSwaggerGen(options =>
+    {
+        var whereFilesAre = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        foreach (var filePath in Directory.GetFiles(Path.Combine(whereFilesAre!), "*.xml"))
+        {
+            try
+            {
+                options.IncludeXmlComments(filePath);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Error while trying to include XML comments from {FilePath}", filePath);
+            }
+        }
+    });
     builder.Services.AddHealthChecks()
         .AddSqlServer(connectionStringDatabase!, tags: ["crucial"])
         .AddRabbitMQ(new Uri(connectionStringBroker!));
-
+    // NDjango Rest framework configuration
+    builder.Services.AddScoped<Serializer<PersonDto, Person, int, AppDbContext>>();
+    builder.Services.AddScoped<Serializer<TodoItemDto, TodoItem, int, AppDbContext>>();
+    
     var app = builder.Build();
+    app.MapControllers();
 
     // Configure the HTTP request pipeline.
-    if (app.Environment.IsDevelopment())
+    app.UseSwagger();
+    app.UseSwaggerUI();
+    app.MapGet("/debug/routes", (IActionDescriptorCollectionProvider provider) =>
     {
-        app.UseSwagger();
-        app.UseSwaggerUI();
-    }
-
-    var summaries = new[]
-    {
-        "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-    };
-
-    app.MapGet("/weatherforecast", () =>
+        return provider.ActionDescriptors.Items.Select(actionDescriptor => new
         {
-            var forecast = Enumerable.Range(1, 5).Select(index =>
-                    new WeatherForecast
-                    (
-                        DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-                        Random.Shared.Next(-20, 55),
-                        summaries[Random.Shared.Next(summaries.Length)]
-                    ))
-                .ToArray();
-            return forecast;
-        })
-        .WithName("GetWeatherForecast")
-        .WithOpenApi();
-
+            Action = actionDescriptor.RouteValues["Action"],
+            Method = actionDescriptor.ActionConstraints!.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods.FirstOrDefault(),
+            Controller = actionDescriptor.RouteValues["Controller"],
+            Name = actionDescriptor.AttributeRouteInfo!.Name,
+            Template = actionDescriptor.AttributeRouteInfo.Template
+        }).ToList();
+    });
     app
         .UseHealthChecks("/healthcheck/liveness",
             new HealthCheckOptions
@@ -93,8 +113,13 @@ try
                 AllowCachingResponses = false,
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
-
-    app.Run();
+    // Apply migrations
+    using var scope = app.Services.CreateScope();
+    using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    if (dbContext.Database.GetPendingMigrations().Any())
+        dbContext.Database.Migrate();
+    
+    await app.RunAsync();
 }
 catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Microsoft.EntityFrameworkCore.Design")
 {
@@ -106,7 +131,8 @@ finally
     await Log.CloseAndFlushAsync();
 }
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
+// Allows tests with WebApplicationFactory
+// https://learn.microsoft.com/en-us/aspnet/core/test/integration-tests?view=aspnetcore-8.0#basic-tests-with-the-default-webapplicationfactory-1
+public partial class Program
 {
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
 }
