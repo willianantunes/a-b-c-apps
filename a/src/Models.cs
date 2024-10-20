@@ -36,6 +36,7 @@ public class Person : StandardEntity
         [
             "Id",
             "Name",
+            "CreatedAt",
         ];
     }
 }

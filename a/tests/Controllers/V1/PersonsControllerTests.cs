@@ -1,7 +1,5 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Tests.Support;
 
 namespace Tests.Controllers.V1;
@@ -13,7 +11,7 @@ public class PersonsControllerTests : IntegrationTests
     {
         // Arrange
         var dbSet = Context.Set<Person>();
-        var salParadise = new Person { Name = "Sal Paradise" };
+        var salParadise = new Person {Name = "Sal Paradise"};
         dbSet.Add(salParadise);
         await Context.SaveChangesAsync();
         // Act
@@ -22,5 +20,5 @@ public class PersonsControllerTests : IntegrationTests
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         var person = dbSet.AsNoTracking().FirstOrDefault(x => x.Id == salParadise.Id);
         Assert.Null(person);
-    }    
+    }
 }
