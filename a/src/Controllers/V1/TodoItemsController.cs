@@ -38,6 +38,7 @@ public class TodoItemsController : BaseController<TodoItemDto, TodoItem, int, Ap
         ];
 
         Filters.Add(new QueryStringFilter<TodoItem>(AllowedFields));
+        Filters.Add(new QueryStringIdRangeFilter<TodoItem, int>());
         Filters.Add(new TodoItemIncludePersonFilter());
     }
 }

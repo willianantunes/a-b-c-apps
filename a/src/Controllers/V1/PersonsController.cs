@@ -26,5 +26,6 @@ public class PersonsController : BaseController<PersonDto, Person, int, AppDbCon
         ];
         
         Filters.Add(new QueryStringFilter<Person>(AllowedFields));
+        Filters.Add(new QueryStringIdRangeFilter<Person, int>());
     }
 }

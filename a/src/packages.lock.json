@@ -77,9 +77,9 @@
       },
       "NDjango.RestFramework": {
         "type": "Direct",
-        "requested": "[0.1.0-test.4, )",
-        "resolved": "0.1.0-test.4",
-        "contentHash": "XItUxyuIGFHEFyCdQIOUOlK3yCmyOG8rmhV+UIBqfutgFnecBOeS/zFeqtRKDROG0ITkuyqKYcsnJbOaMSkxjQ==",
+        "requested": "[0.1.0-test.5, )",
+        "resolved": "0.1.0-test.5",
+        "contentHash": "qZmeKSL38zgOQAHWK78ipxcfIyXDNFl1isCv+T6gSfZ8jQ3kHWkBxhRq38/cG/ihbS95nZk0KyKMF7UvIwMJPQ==",
         "dependencies": {
           "Microsoft.AspNetCore.Http.Abstractions": "2.2.0",
           "Microsoft.AspNetCore.Mvc.Core": "2.2.5",

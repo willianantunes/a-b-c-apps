@@ -20,6 +20,8 @@ public class TodoItem : StandardEntity
             "Id",
             "Name",
             "IsComplete",
+            "CreatedAt",
+            "UpdatedAt",            
             "Person",
             "Person:Name",
         ];
@@ -37,6 +39,7 @@ public class Person : StandardEntity
             "Id",
             "Name",
             "CreatedAt",
+            "UpdatedAt"
         ];
     }
 }
