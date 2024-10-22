@@ -15,17 +15,18 @@ public class PersonDto : BaseDto<int>
 public class PersonsController : BaseController<PersonDto, Person, int, AppDbContext>
 {
     public PersonsController(
-        Serializer<PersonDto, Person, int, AppDbContext> serializer, 
+        Serializer<PersonDto, Person, int, AppDbContext> serializer,
         AppDbContext context,
         ILogger<Person> logger
-        ) : base(serializer, context, logger)
+    ) : base(serializer, context, logger)
     {
         AllowedFields =
         [
             nameof(Person.Name)
         ];
-        
+
         Filters.Add(new QueryStringFilter<Person>(AllowedFields));
+        Filters.Add(new QueryStringSearchFilter<Person>(AllowedFields));
         Filters.Add(new QueryStringIdRangeFilter<Person, int>());
     }
 }
