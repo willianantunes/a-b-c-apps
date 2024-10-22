@@ -1,15 +1,17 @@
 import { stringify } from 'query-string'
 import { fetchUtils } from 'ra-core'
-import * as PageNumberPagination from './page-number-navigation'
+import * as NDjangoRestFrameworkPagination from './ndjango-rest-framework-pagination'
 
 export default (apiUrl, httpClient = fetchUtils.fetchJson) => ({
   getList: async (resource, params) => {
-    // Translate the query parameters to the format PageNumberPagination expects
+    console.debug('getList has been called', JSON.stringify(params))
+    // Translate the query parameters to the format NDjangoRestFrameworkPagination expects
     const query = {
-      ...PageNumberPagination.translateFilter(params.filter),
-      ...PageNumberPagination.translatePaginationQuery(params.pagination),
-      ...PageNumberPagination.translateSort(params.sort),
+      ...NDjangoRestFrameworkPagination.translateFilter(params.filter),
+      ...NDjangoRestFrameworkPagination.translatePaginationQuery(params.pagination),
+      ...NDjangoRestFrameworkPagination.translateSort(params.sort),
     }
+    console.debug('query', JSON.stringify(query))
     const url = `${apiUrl}/${resource}?${stringify(query)}`
     const options = { signal: params?.signal }
     try {
@@ -54,47 +56,42 @@ export default (apiUrl, httpClient = fetchUtils.fetchJson) => ({
       data: json.results,
     }))
   },
-  getManyReference: (resource, params) => {
+  getManyReference: async (resource, params) => {
     console.debug('getManyReference has been called', JSON.stringify(params))
-    const { page, perPage } = params.pagination
-    const { field, order } = params.sort
-
-    const rangeStart = (page - 1) * perPage
-    const rangeEnd = page * perPage - 1
-
+    // Translate the query parameters to the format NDjangoRestFrameworkPagination expects
     const query = {
-      sort: JSON.stringify([field, order]),
-      range: JSON.stringify([(page - 1) * perPage, page * perPage - 1]),
-      filter: JSON.stringify({
-        ...params.filter,
-        [params.target]: params.id,
-      }),
+      ...NDjangoRestFrameworkPagination.translateFilter(params.filter),
+      ...NDjangoRestFrameworkPagination.translatePaginationQuery(params.pagination),
+      ...NDjangoRestFrameworkPagination.translateSort(params.sort),
+      [params.target]: params.id,
     }
     const url = `${apiUrl}/${resource}?${stringify(query)}`
-    const options =
-      countHeader === 'Content-Range'
-        ? {
-            headers: new Headers({
-              Range: `${resource}=${rangeStart}-${rangeEnd}`,
-            }),
-            signal: params?.signal,
-          }
-        : { signal: params?.signal }
-
-    return httpClient(url, options).then(({ headers, json }) => {
-      if (!headers.has(countHeader)) {
-        throw new Error(
-          `The ${countHeader} header is missing in the HTTP Response. The simple REST data provider expects responses for lists of resources to contain this header with the total number of results to build the pagination. If you are using CORS, did you declare ${countHeader} in the Access-Control-Expose-Headers header?`
-        )
+    const options = { signal: params?.signal }
+    try {
+      // Call the API (check out https://github.com/juntossomosmais/NDjango.RestFramework)
+      const { json } = await httpClient(url, options)
+      // Use `Partial Pagination`. Check out https://marmelab.com/react-admin/DataProviderWriting.html#partial-pagination
+      const hasPreviousPage = json.hasOwnProperty('previous') && json['previous'] !== ''
+      const hasNextPage = json.hasOwnProperty('next') && json['next'] !== ''
+      const hasCount = json.hasOwnProperty('count')
+      const dataToBeReturned = {
+        data: json.results,
+        pageInfo: {
+          hasPreviousPage: hasPreviousPage,
+          hasNextPage: hasNextPage,
+        },
       }
-      return {
-        data: json,
-        total:
-          countHeader === 'Content-Range'
-            ? parseInt(headers.get('content-range').split('/').pop(), 10)
-            : parseInt(headers.get(countHeader.toLowerCase())),
+      if (hasCount) {
+        dataToBeReturned['total'] = json.count
       }
-    })
+      return dataToBeReturned
+    } catch (error) {
+      if (error.status === 404) {
+        console.log('Returning empty data because of 404')
+        return { data: [], total: 0, pageInfo: { hasPreviousPage: false, hasNextPage: false } }
+      }
+      throw error
+    }
   },
   update: (resource, params) =>
     httpClient(`${apiUrl}/${resource}/${encodeURIComponent(params.id)}`, {

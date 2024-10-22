@@ -1,4 +1,4 @@
-import { translateFilter, translateSort, translatePaginationQuery } from './page-number-navigation'
+import { translateFilter, translateSort, translatePaginationQuery } from './ndjango-rest-framework-pagination'
 
 describe('translateFilter', () => {
   it('should transform keys to PascalCase', () => {
@@ -55,7 +55,7 @@ describe('translatePaginationQuery', () => {
     ]
 
     testCases.forEach(({ input, expected }) => {
-      expect(translatePaginationQuery(input.page, input.perPage)).toEqual(expected)
+      expect(translatePaginationQuery(input)).toEqual(expected)
     })
   })
 })

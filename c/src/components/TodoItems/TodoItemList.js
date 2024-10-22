@@ -1,7 +1,7 @@
 import { BooleanField, Datagrid, DateField, List, NumberField, ReferenceField, TextField } from 'react-admin'
 import * as React from 'react'
 
-export const TodoitemList = () => (
+export const TodoItemList = () => (
   <List>
     <Datagrid>
       <NumberField source='id' />

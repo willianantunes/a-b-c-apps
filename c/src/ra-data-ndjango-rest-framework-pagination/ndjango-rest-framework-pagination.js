@@ -9,6 +9,10 @@ const translateFilter = (filter) => {
   const transformedFilter = {}
   for (const key in filter) {
     if (filter.hasOwnProperty(key)) {
+      const isSpecialKey = key === '_interceptChangeToSearch' // Check out `PersonList.js` file
+      if (isSpecialKey) {
+        transformedFilter['search'] = `%${filter[key]}%`
+      }
       const keyAsPascalCase = key.charAt(0).toUpperCase() + key.slice(1)
       transformedFilter[keyAsPascalCase] = filter[key]
     }
