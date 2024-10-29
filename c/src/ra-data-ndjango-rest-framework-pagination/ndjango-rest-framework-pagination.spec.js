@@ -47,11 +47,11 @@ describe('translateSort', () => {
 describe('translatePaginationQuery', () => {
   it('should transform pagination parameters correctly', () => {
     const testCases = [
-      { input: { page: 1, perPage: 5 }, expected: { page: 1, per_page: 5 } },
-      { input: { page: 2, perPage: 10 }, expected: { page: 2, per_page: 10 } },
-      { input: { page: 3, perPage: 15 }, expected: { page: 3, per_page: 15 } },
-      { input: { page: 4, perPage: 20 }, expected: { page: 4, per_page: 20 } },
-      { input: { page: 5, perPage: 25 }, expected: { page: 5, per_page: 25 } },
+      { input: { page: 1, perPage: 5 }, expected: { page: 1, page_size: 5 } },
+      { input: { page: 2, perPage: 10 }, expected: { page: 2, page_size: 10 } },
+      { input: { page: 3, perPage: 15 }, expected: { page: 3, page_size: 15 } },
+      { input: { page: 4, perPage: 20 }, expected: { page: 4, page_size: 20 } },
+      { input: { page: 5, perPage: 25 }, expected: { page: 5, page_size: 25 } },
     ]
 
     testCases.forEach(({ input, expected }) => {

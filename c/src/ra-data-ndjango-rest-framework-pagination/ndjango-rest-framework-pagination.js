@@ -1,7 +1,7 @@
 const translatePaginationQuery = ({ page, perPage }) => {
   return {
     page: page,
-    per_page: perPage,
+    page_size: perPage,
   }
 }
 
