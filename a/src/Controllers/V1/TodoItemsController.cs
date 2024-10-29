@@ -34,8 +34,10 @@ public class TodoItemsController : BaseController<TodoItemDto, TodoItem, int, Ap
         AllowedFields =
         [
             nameof(TodoItem.UserId),
-            nameof(TodoItem.Name),
-            nameof(TodoItem.IsComplete)
+            nameof(TodoItem.Name),  
+            nameof(TodoItem.IsComplete),
+            nameof(TodoItem.CreatedAt),
+            nameof(TodoItem.UpdatedAt)
         ];
 
         Filters.Add(new QueryStringFilter<TodoItem>(AllowedFields));

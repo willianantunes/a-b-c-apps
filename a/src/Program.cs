@@ -80,6 +80,11 @@ try
     // Configure the HTTP request pipeline.
     app.UseSwagger();
     app.UseSwaggerUI();
+    app.UseCors(builder =>
+        builder
+            .AllowAnyOrigin()
+            .AllowAnyMethod()
+            .AllowAnyHeader());
     app.MapGet("/debug/routes", (IActionDescriptorCollectionProvider provider) =>
     {
         return provider.ActionDescriptors.Items.Select(actionDescriptor => new

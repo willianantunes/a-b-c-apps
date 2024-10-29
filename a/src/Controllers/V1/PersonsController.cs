@@ -22,7 +22,10 @@ public class PersonsController : BaseController<PersonDto, Person, int, AppDbCon
     {
         AllowedFields =
         [
-            nameof(Person.Name)
+            nameof(Person.Id),
+            nameof(Person.Name),
+            nameof(Person.CreatedAt),
+            nameof(Person.UpdatedAt),
         ];
 
         Filters.Add(new QueryStringFilter<Person>(AllowedFields));

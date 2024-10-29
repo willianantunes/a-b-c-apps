@@ -18,7 +18,7 @@
     <PackageReference Include="AspNetCore.HealthChecks.SqlServer" Version="8.*" />
     <PackageReference Include="AspNetCore.HealthChecks.UI.Client" Version="8.*" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="8.*" />
-    <PackageReference Include="NDjango.RestFramework" Version="0.1.0-test.5" />
+    <PackageReference Include="NDjango.RestFramework" Version="0.1.0-test.6" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.*" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.*">
       <PrivateAssets>all</PrivateAssets>
