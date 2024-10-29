@@ -4,7 +4,7 @@ import * as React from 'react'
 export const TodoItemList = () => (
   <List>
     <Datagrid>
-      <NumberField source='id' />
+      <NumberField source='id' sortable={false} />
       <TextField source='name' />
       <BooleanField source='isComplete' />
       <DateField source='createdAt' showTime={true} />
