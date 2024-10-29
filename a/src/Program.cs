@@ -80,11 +80,28 @@ try
     // Configure the HTTP request pipeline.
     app.UseSwagger();
     app.UseSwaggerUI();
-    app.UseCors(builder =>
-        builder
-            .AllowAnyOrigin()
-            .AllowAnyMethod()
-            .AllowAnyHeader());
+    // Configure CORS policy
+    var s = configuration["ALLOWED_ORIGINS"];
+    if (s is not null && s.Length > 0)
+    {
+        if (s.Equals("*"))
+        {
+            app.UseCors(builder =>
+                builder
+                    .AllowAnyOrigin()
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+        }
+        else
+        {
+            var allowedOrigins = s.Split(',');
+            app.UseCors(builder =>
+                builder
+                    .WithOrigins(allowedOrigins)
+                    .AllowAnyMethod()
+                    .AllowAnyHeader());
+        }
+    }
     app.MapGet("/debug/routes", (IActionDescriptorCollectionProvider provider) =>
     {
         return provider.ActionDescriptors.Items.Select(actionDescriptor => new
@@ -97,33 +114,34 @@ try
         }).ToList();
     });
     app
-        .UseHealthChecks("/healthcheck/liveness",
+        .UseHealthChecks("/api/healthcheck/liveness",
             new HealthCheckOptions
             {
                 Predicate = _ => false,
                 AllowCachingResponses = false,
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             })
-        .UseHealthChecks("/healthcheck/readiness",
+        .UseHealthChecks("/api/healthcheck/readiness",
             new HealthCheckOptions
             {
                 Predicate = targetHealthCheck => targetHealthCheck.Tags.Contains("crucial"),
                 AllowCachingResponses = false,
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             })
-        .UseHealthChecks("/healthcheck/integrations",
+        .UseHealthChecks("/api/healthcheck/integrations",
             new HealthCheckOptions
             {
                 Predicate = _ => true,
                 AllowCachingResponses = false,
                 ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
             });
-    // Apply migrations
-    using var scope = app.Services.CreateScope();
-    using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (dbContext.Database.GetPendingMigrations().Any())
-        dbContext.Database.Migrate();
-    
+    if (StrToBool(configuration["APPLY_MIGRATIONS"]))
+    {
+        using var scope = app.Services.CreateScope();
+        using var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        if (dbContext.Database.GetPendingMigrations().Any())
+            dbContext.Database.Migrate();
+    }
     await app.RunAsync();
 }
 catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Microsoft.EntityFrameworkCore.Design")
@@ -134,6 +152,23 @@ catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Micro
 finally
 {
     await Log.CloseAndFlushAsync();
+}
+
+bool StrToBool(string? value)
+{
+    if (value is null)
+        return false;
+    value = value.ToLower();
+    return value switch
+    {
+        "y" => true,
+        "yes" => true,
+        "on" => true,
+        "1" => true,
+        "true" => true,
+        "t" => true,
+        _ => false,
+    };
 }
 
 // Allows tests with WebApplicationFactory

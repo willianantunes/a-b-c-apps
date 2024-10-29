@@ -49,6 +49,9 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env.development
+    environment:
+      APPLY_MIGRATIONS: "true"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8000"
     ports:
       - "8000:8000"
     depends_on:
