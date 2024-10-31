@@ -1,0 +1,9 @@
+# https://docs.docker.com/engine/reference/builder/#dockerignore-file
+*
+!src
+!.env
+!jsconfig.json
+!next.config.mjs
+!package.json
+!package-lock.json
+!healthcheck.js

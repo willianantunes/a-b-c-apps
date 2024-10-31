@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, Link } from '@mui/material'
 
-export const Dashboard = () => {
+export default function Dashboard() {
   const letterAlink = 'https://github.com/willianantunes/a-b-c-apps/tree/main/a'
   const ndrfLink = 'https://github.com/juntossomosmais/NDjango.RestFramework'
   return (
