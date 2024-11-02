@@ -1,6 +1,8 @@
 from rest_framework import serializers
 
 from letter_b.apps.example.models import AuditAction
+from letter_b.apps.example.models import Person
+from letter_b.apps.example.models import TodoItem
 
 
 class UserMetadataSerializer(serializers.Serializer):
@@ -26,4 +28,16 @@ class UserAttributesSerializer(serializers.Serializer):
 class AuditActionSerializer(serializers.ModelSerializer):
     class Meta:
         model = AuditAction
+        fields = "__all__"
+
+
+class PersonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Person
+        fields = "__all__"
+
+
+class TodoItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TodoItem
         fields = "__all__"

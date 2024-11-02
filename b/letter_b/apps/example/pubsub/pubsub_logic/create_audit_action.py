@@ -29,7 +29,7 @@ def process(validated_payload_serializer: AuditActionSerializer):
     """
     user_id = validated_payload_serializer.validated_data["user_id"]
 
-    publisher = build_publisher(f"django-template-standard-view-{uuid.uuid4()}")
+    publisher = build_publisher(f"letter-b-views-{uuid.uuid4()}")
     publisher.send(queue="/queue/test-do-test", body={"any": "value"})
 
     _logger.debug("Finding user with id %s", user_id)

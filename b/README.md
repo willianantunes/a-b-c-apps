@@ -1,6 +1,12 @@
 # Letter B
 
-Execute `docker compose up app-production` to start API server in production mode. When the server is running, you can access it at `http://localhost:8080`.
+Execute `docker compose up app-production` to start API server in production mode. When the server is running, you can access it at `http://localhost:8080/admin` and use the credential `admin:admin` to log in. Other links:
+
+- http://localhost:8080/api/healthcheck/liveness
+- http://localhost:8080/api/healthcheck/readiness
+- http://localhost:8080/api/healthcheck/integrations
+- http://localhost:8080/api/v1/
+- http://localhost:8080/api/v1/users/attributes
 
 ## Recurring procedures
 

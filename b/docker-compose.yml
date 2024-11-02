@@ -71,7 +71,7 @@ services:
       timeout: 5s
       retries: 5
 
-  app-production-to-evaluate-dockerfile:
+  app-production:
     build:
       context: .
       dockerfile: Dockerfile

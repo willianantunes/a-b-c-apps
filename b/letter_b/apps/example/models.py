@@ -55,3 +55,19 @@ class UserAttributes(StandardModelMixin):
     @property
     def gender(self) -> Optional[str]:
         return self._get_user_metadata_by_key("gender")
+
+
+class Person(StandardModelMixin):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
+
+class TodoItem(StandardModelMixin):
+    name = models.CharField(max_length=255, null=True, blank=True)
+    is_complete = models.BooleanField(default=False)
+    person = models.ForeignKey(Person, related_name="todo_items", on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f"{self.name} / {self.is_complete} / {self.person.name}"

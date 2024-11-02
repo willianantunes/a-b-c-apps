@@ -5,11 +5,16 @@ from uuid import uuid4
 from django.conf import settings
 from django_stomp.builder import build_publisher
 from rest_framework import status
+from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from letter_b.apps.example.api.v1.serializers import PersonSerializer
+from letter_b.apps.example.api.v1.serializers import TodoItemSerializer
 from letter_b.apps.example.api.v1.serializers import UserAttributesSerializer
 from letter_b.apps.example.models import AuditAction
+from letter_b.apps.example.models import Person
+from letter_b.apps.example.models import TodoItem
 
 _logger = logging.getLogger(__name__)
 
@@ -28,7 +33,7 @@ class UserManagementAttributesAPIView(APIView):
         AuditAction(user_id=user_id, action=UserManagementAttributesAPIView.post.__name__, success=True).save()
 
         # testing publish message to broker
-        publisher = build_publisher(f"django-template-view-{uuid4()}")
+        publisher = build_publisher(f"letter-b-views-{uuid4()}")
         publisher.send(
             queue=settings.CREATE_AUDIT_ACTION_DESTINATION,
             body={
@@ -58,3 +63,13 @@ class UserManagementAttributesAPIView(APIView):
             }
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class PersonViewSet(viewsets.ModelViewSet):
+    queryset = Person.objects.all()
+    serializer_class = PersonSerializer
+
+
+class TodoItemViewSet(viewsets.ModelViewSet):
+    queryset = TodoItem.objects.all()
+    serializer_class = TodoItemSerializer
