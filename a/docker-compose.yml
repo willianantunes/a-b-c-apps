@@ -6,7 +6,7 @@ services:
   db:
     image: "mcr.microsoft.com/mssql/server:2022-latest"
     ports:
-      - "1433:1433"    
+      - "1433:1433"
     environment:
       SA_PASSWORD: "Password1"
       ACCEPT_EULA: "Y"
@@ -41,6 +41,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     command: [ "./scripts/start-web-development.sh" ]
 
   app-production:
@@ -59,6 +61,8 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      otel-collector:
+        condition: service_started
     healthcheck:
       test: curl --fail http://localhost:8000/healthcheck/readiness || exit 1
       interval: 10s
@@ -80,3 +84,36 @@ services:
     volumes:
       - .:/app
     command: [ "./scripts/start-lint-formatter.sh" ]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.112.0
+    command: [ "--config=/etc/otel-collector-config.yml" ]
+    volumes:
+      - ./otel-collector-config.yml:/etc/otel-collector-config.yml
+    depends_on:
+      hyperdx:
+        condition: service_healthy
+
+  jaeger:
+    image: jaegertracing/all-in-one:1.62.0
+    ports:
+      - "16686:16686"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost:14269" ]
+      interval: 1s
+      timeout: 3s
+      retries: 10
+
+  hyperdx:
+    image: hyperdx/hyperdx-local:1.10.0
+    environment:
+      HYPERDX_APP_PORT: 8090 # HyperDX UI (Next.js)
+      HYPERDX_API_PORT: 8091 # Private HyperDX API for the UI
+    ports:
+      - "8090:8080"
+      - "8091:8000"
+      - "4317:4317"
+    healthcheck:
+      test: curl --fail http://localhost:8000/health || exit 1
+      interval: 10s
+      timeout: 3s

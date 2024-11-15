@@ -5,7 +5,13 @@
       "commandName": "Project",
       "dotnetRunMessages": true,
       "launchBrowser": true,
-      "launchUrl": "swagger"
+      "launchUrl": "swagger",
+      "environmentVariables": {
+        "APPLY_MIGRATIONS": "true",
+        "OTEL_EXPORTER_OTLP_ENDPOINT": "http://localhost:4317",
+        "OTEL_RESOURCE_ATTRIBUTES": "service.name=letter-a,service.version=0.1.0",
+        "OTEL_LOG_LEVEL": "debug"
+      }
     }
   }
 }

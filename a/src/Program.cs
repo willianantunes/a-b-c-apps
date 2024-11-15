@@ -8,6 +8,10 @@ using Microsoft.EntityFrameworkCore;
 using NDjango.RestFramework.Extensions;
 using NDjango.RestFramework.Serializer;
 using Newtonsoft.Json;
+using OpenTelemetry.Exporter;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using Serilog;
 
 var solutionSettings = Path.Combine(Directory.GetCurrentDirectory(), "..", "appsettings.json");
@@ -25,22 +29,92 @@ Log.Logger = new LoggerConfiguration()
 
 Log.Information("Logger initialized. Starting up the application.");
 
-configuration["ASPNETCORE_URLS"] = configuration["ASPNETCORE_URLS"] is null ? "http://+:8000" : configuration["ASPNETCORE_URLS"];
+configuration["ASPNETCORE_URLS"] =
+    configuration["ASPNETCORE_URLS"] is null ? "http://+:8000" : configuration["ASPNETCORE_URLS"];
 
 try
 {
     var builder = WebApplication.CreateBuilder(args);
-
-    builder.Host.UseSerilog();
     builder.Configuration.AddConfiguration(configuration);
+    // Clear default logging providers used by WebApplication host.
+    builder.Logging.ClearProviders();
+
+    #region Configure Serilog and OpenTelemetry
+
+    var collectorEndpoint = configuration.GetValue<string>("OTEL_EXPORTER_OTLP_ENDPOINT");
+    var resource = ResourceBuilder.CreateDefault().AddEnvironmentVariableDetector().Build();
+    builder.Host.UseSerilog((_, settings) =>
+    {
+        var loggerSinkConfiguration = settings.WriteTo;
+        loggerSinkConfiguration.Console();
+        if (collectorEndpoint is not null)
+        {
+            loggerSinkConfiguration.OpenTelemetry(options =>
+            {
+                options.Endpoint = collectorEndpoint;
+                options.ResourceAttributes = resource.Attributes.ToDictionary(pair => pair.Key, pair => pair.Value);
+            });
+        }
+    });
+    
+    var exporterName = "console";
+    if (collectorEndpoint is not null)
+        exporterName = "otlp";
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(r => r.AddEnvironmentVariableDetector())
+        // https://opentelemetry.io/docs/zero-code/net/instrumentations/#metrics-instrumentations
+        .WithMetrics(configure =>
+            {
+                configure
+                    .AddRuntimeInstrumentation()
+                    .AddAspNetCoreInstrumentation()
+                    .AddHttpClientInstrumentation();
+                switch (exporterName)
+                {
+                    case "otlp":
+                        configure.AddOtlpExporter(otlpOptions =>
+                        {
+                            otlpOptions.Endpoint = new Uri(collectorEndpoint!);
+                            otlpOptions.Protocol = OtlpExportProtocol.Grpc;
+                        });
+                        break;
+                    default:
+                        configure.AddConsoleExporter();
+                        break;
+                }
+            }
+        )
+        .WithTracing(configure =>
+        {
+            configure
+                .AddAspNetCoreInstrumentation()
+                .AddHttpClientInstrumentation(options => options.RecordException = true)
+                .AddSqlClientInstrumentation(options =>
+                {
+                    options.RecordException = true;
+                    options.SetDbStatementForText = true;
+                });
+            switch (exporterName)
+            {
+                case "otlp":
+                    configure.AddOtlpExporter(otlpOptions =>
+                    {
+                        otlpOptions.Endpoint = new Uri(collectorEndpoint!);
+                        otlpOptions.Protocol = OtlpExportProtocol.Grpc;
+                    });
+                    break;
+                default:
+                    configure.AddConsoleExporter();
+                    break;
+            }
+        });
+
+    #endregion
 
     var connectionStringDatabase = configuration.GetConnectionString("AppDbContext");
     var connectionStringBroker = configuration.GetConnectionString("Broker");
-    builder.Services.AddDbContext<AppDbContext>(options =>
-    {
-        options.UseSqlServer(connectionStringDatabase);
-    });
-    
+    builder.Services.AddDbContext<AppDbContext>(options => { options.UseSqlServer(connectionStringDatabase); });
+
     // Add services to the container.
     builder.Services.AddControllers()
         .AddNewtonsoftJson(config =>
@@ -73,7 +147,7 @@ try
     // NDjango Rest framework configuration
     builder.Services.AddScoped<Serializer<PersonDto, Person, int, AppDbContext>>();
     builder.Services.AddScoped<Serializer<TodoItemDto, TodoItem, int, AppDbContext>>();
-    
+
     var app = builder.Build();
     app.MapControllers();
 
@@ -81,10 +155,10 @@ try
     app.UseSwagger();
     app.UseSwaggerUI();
     // Configure CORS policy
-    var s = configuration["ALLOWED_ORIGINS"];
-    if (s is not null && s.Length > 0)
+    var allowedOrigins = configuration["ALLOWED_ORIGINS"];
+    if (allowedOrigins is not null && allowedOrigins.Length > 0)
     {
-        if (s.Equals("*"))
+        if (allowedOrigins.Equals("*"))
         {
             app.UseCors(builder =>
                 builder
@@ -94,20 +168,21 @@ try
         }
         else
         {
-            var allowedOrigins = s.Split(',');
             app.UseCors(builder =>
                 builder
-                    .WithOrigins(allowedOrigins)
+                    .WithOrigins(allowedOrigins.Split(','))
                     .AllowAnyMethod()
                     .AllowAnyHeader());
         }
     }
+
     app.MapGet("/debug/routes", (IActionDescriptorCollectionProvider provider) =>
     {
         return provider.ActionDescriptors.Items.Select(actionDescriptor => new
         {
             Action = actionDescriptor.RouteValues["Action"],
-            Method = actionDescriptor.ActionConstraints!.OfType<HttpMethodActionConstraint>().FirstOrDefault()?.HttpMethods.FirstOrDefault(),
+            Method = actionDescriptor.ActionConstraints!.OfType<HttpMethodActionConstraint>().FirstOrDefault()
+                ?.HttpMethods.FirstOrDefault(),
             Controller = actionDescriptor.RouteValues["Controller"],
             Name = actionDescriptor.AttributeRouteInfo!.Name,
             Template = actionDescriptor.AttributeRouteInfo.Template
@@ -142,6 +217,7 @@ try
         if (dbContext.Database.GetPendingMigrations().Any())
             dbContext.Database.Migrate();
     }
+
     await app.RunAsync();
 }
 catch (Exception ex) when (ex is not HostAbortedException && ex.Source != "Microsoft.EntityFrameworkCore.Design")
