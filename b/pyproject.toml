@@ -5,8 +5,7 @@ package-mode = false
 python = "^3.12"
 django = "*"
 djangorestframework = "*"
-psycopg2-binary = "*"
-psycogreen = "*"
+psycopg = { extras = ["binary"], version = "*" }
 django-health-check = "*"
 gunicorn = "*"
 gevent = "*"
@@ -14,6 +13,13 @@ requests = "*"
 django-stomp = "*"
 request-id-django-log = "*"
 python-json-logger = "*"
+opentelemetry-sdk = "*"
+# https://github.com/open-telemetry/opentelemetry-python-contrib/tree/803bb322ba77bc2afb30fb9c31fb8cdde04fc8d6/instrumentation
+opentelemetry-instrumentation-django = "*"
+opentelemetry-instrumentation-psycopg = "*"
+opentelemetry-instrumentation-wsgi = "*"
+opentelemetry-instrumentation-logging = "*"
+opentelemetry-exporter-otlp = "*"
 
 [tool.poetry.group.dev.dependencies]
 coverage = "*"

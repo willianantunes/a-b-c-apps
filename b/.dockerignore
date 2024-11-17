@@ -3,6 +3,7 @@
 !letter_b
 !scripts
 !manage.py
+!otlp.py
 !poetry*
 !pyproject.toml
 !gunicorn_config.py

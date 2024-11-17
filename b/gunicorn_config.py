@@ -1,12 +1,24 @@
-import psycogreen.gevent
+from gevent import monkey
 
-# https://github.com/psycopg/psycogreen/blob/39a258cb4040b88b60a7600f6942e651a28db9a7/README.rst#module-psycogreengevent
-psycogreen.gevent.patch_psycopg()
+# If you don't do this, you'll get the following error for example:
+# DatabaseWrapper objects created in a thread can only be used in that same thread. The object with alias 'default' was created in thread id 140208374647872 and this is thread id 140208369922144
+monkey.patch_all()
 
 import json
 import os
 
 from pythonjsonlogger.jsonlogger import JsonFormatter
+
+
+def post_fork(server, worker):
+    """
+    https://opentelemetry-python.readthedocs.io/en/stable/examples/fork-process-model/README.html#gunicorn-post-fork-hook
+    """
+    server.log.info("Worker spawned (pid: %s)", worker.pid)
+    from otlp import configure_opentelemetry
+
+    configure_opentelemetry()
+
 
 bind = os.environ.get("DJANGO_BIND_ADDRESS", "0.0.0.0") + ":" + os.environ.get("DJANGO_BIND_PORT", "8000")
 backlog = int(os.getenv("GUNICORN_BACKLOG", "2048"))

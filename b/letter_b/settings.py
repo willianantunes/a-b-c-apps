@@ -158,7 +158,7 @@ USE_TZ = True
 
 
 # Logging
-# https://docs.djangoproject.com/en/4.0/topics/logging/
+# https://docs.djangoproject.com/en/5.1/topics/logging/
 
 LOGGING = {
     "version": 1,
@@ -175,6 +175,10 @@ LOGGING = {
             "()": JsonFormatter,
             "format": "%(levelname)-8s [%(asctime)s] [%(request_id)s] %(name)s: %(message)s",
         },
+        "otlp": {
+            "()": Formatter,
+            "format": "%(asctime)s %(levelname)s [%(name)s] [%(filename)s:%(lineno)d] [trace_id=%(otelTraceID)s span_id=%(otelSpanID)s resource.service.name=%(otelServiceName)s trace_sampled=%(otelTraceSampled)s] - %(message)s",
+        },
         "development": {
             "()": Formatter,
             "format": "%(levelname)-8s [%(asctime)s] [%(request_id)s] %(name)s: %(message)s",
@@ -185,10 +189,11 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "filters": ["request_id", "redact_filter"],
             "formatter": os.getenv("DEFAULT_LOG_FORMATTER", "standard"),
-        }
+        },
+        "otlp": {"class": "otlp.CustomLoggingHandler"},
     },
     "loggers": {
-        "": {"level": os.getenv("ROOT_LOG_LEVEL", "INFO"), "handlers": ["console"]},
+        "": {"level": os.getenv("ROOT_LOG_LEVEL", "INFO"), "handlers": ["console", "otlp"]},
         "letter_b": {
             "level": os.getenv("PROJECT_LOG_LEVEL", "INFO"),
             "handlers": ["console"],

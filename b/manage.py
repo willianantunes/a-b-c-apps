@@ -3,11 +3,15 @@
 import os
 import sys
 
+from otlp import configure_opentelemetry
+
 
 def main():
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "letter_b.settings")
     try:
         from django.core.management import execute_from_command_line
+
+        configure_opentelemetry()
     except ImportError as exc:
         raise ImportError(
             "Couldn't import Django. Are you sure it's installed and "

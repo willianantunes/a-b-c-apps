@@ -8,6 +8,8 @@ Execute `docker compose up app-production` to start API server in production mod
 - http://localhost:8080/api/v1/
 - http://localhost:8080/api/v1/users/attributes
 
+Look at traces, logs, and metrics at `http://localhost:8090`.
+
 ## Recurring procedures
 
 ### Updating the lock file
