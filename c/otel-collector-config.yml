@@ -1,0 +1,52 @@
+# https://opentelemetry.io/docs/collector/configuration/
+
+# Receivers collect telemetry from one or more sources.
+# They can be pull or push based, and may support one or more data sources.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+        cors:
+          allowed_origins:
+            - http://localhost:3000
+            - http://app.local:3000
+
+# Processors take the data collected by receivers and modify or transform it before sending it to the exporters.
+processors:
+  batch: # https://github.com/open-telemetry/opentelemetry-collector/blob/e1a688fc4ef45306b2782b68423b21334b5ebd18/processor/batchprocessor/README.md
+    timeout: 5s
+    send_batch_size: 10
+    send_batch_max_size: 100
+
+# Exporters send data to one or more backends or destinations.
+exporters:
+  debug:
+    verbosity: detailed
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+  zipkin:
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+    format: proto
+  otlp/jaeger:
+    endpoint: jaeger-all-in-one:4317
+    tls:
+      insecure: true
+
+service:
+  telemetry:
+    metrics:
+      address: 0.0.0.0:8888
+    logs:
+      level: "debug"
+  pipelines:
+    traces:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ zipkin, otlp/jaeger ]
+    metrics:
+      receivers: [ otlp ]
+      processors: [ batch ]
+      exporters: [ prometheus ]

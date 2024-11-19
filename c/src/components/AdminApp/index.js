@@ -13,8 +13,11 @@ import { TodoItemShow } from '@/components/TodoItems/TodoItemShow'
 import { TodoItemEdit } from '@/components/TodoItems/TodoItemEdit'
 import Dashboard from '@/components/Dashboard'
 import { PUBLIC_LETTER_A_API } from '@/app/settings'
+import { startOtelInstrumentation } from '@/otlp-browser'
 
 const dataProvider = customDataProvider(PUBLIC_LETTER_A_API)
+
+startOtelInstrumentation()
 
 export default function AdminApp() {
   return (

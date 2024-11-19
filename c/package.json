@@ -18,6 +18,18 @@
     "prettier": "3.3.3"
   },
   "dependencies": {
+    "@opentelemetry/auto-instrumentations-node": "^0.53.0",
+    "@opentelemetry/auto-instrumentations-web": "^0.43.0",
+    "@opentelemetry/context-zone": "^1.28.0",
+    "@opentelemetry/core": "^1.28.0",
+    "@opentelemetry/exporter-trace-otlp-http": "^0.55.0",
+    "@opentelemetry/instrumentation": "^0.55.0",
+    "@opentelemetry/resources": "^1.28.0",
+    "@opentelemetry/sdk-node": "^0.55.0",
+    "@opentelemetry/sdk-trace-base": "^1.28.0",
+    "@opentelemetry/sdk-trace-node": "^1.28.0",
+    "@opentelemetry/sdk-trace-web": "^1.28.0",
+    "@opentelemetry/semantic-conventions": "^1.27.0",
     "next": "14.2.15",
     "ra-data-simple-rest": "^5.2.3",
     "react": "^18",
