@@ -8,7 +8,12 @@ Execute `docker compose up app-production` to start API server in production mod
 - http://localhost:8080/api/v1/
 - http://localhost:8080/api/v1/users/attributes
 
-Look at traces, logs, and metrics at `http://localhost:8090`.
+Observability tools are available at:
+
+- Jaeger: http://0.0.0.0:16686
+- Zipkin: http://0.0.0.0:9411
+- Prometheus: http://0.0.0.0:9090
+- HyperDX: http://localhost:8090
 
 ## Recurring procedures
 

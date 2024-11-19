@@ -25,26 +25,31 @@ exporters:
     endpoint: "hyperdx:4317"
     tls:
       insecure: true
-
-extensions:
-  health_check:
-  pprof:
-  zpages:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+  zipkin:
+    endpoint: "http://zipkin-all-in-one:9411/api/v2/spans"
+    format: proto
+  otlp/jaeger:
+    endpoint: jaeger-all-in-one:4317
+    tls:
+      insecure: true
 
 service:
-  extensions: [ health_check, pprof, zpages ]
   telemetry:
+    metrics:
+      address: 0.0.0.0:8888
     logs:
       level: "debug"
   pipelines:
     traces:
       receivers: [ otlp ]
       processors: [ batch ]
-      exporters: [ otlp/hyperdx ]
+      exporters: [ zipkin, otlp/jaeger, otlp/hyperdx ]
     metrics:
       receivers: [ otlp ]
       processors: [ batch ]
-      exporters: [ otlp/hyperdx ]
+      exporters: [ prometheus, otlp/hyperdx ]
     logs:
       receivers: [ otlp ]
       processors: [ batch ]
