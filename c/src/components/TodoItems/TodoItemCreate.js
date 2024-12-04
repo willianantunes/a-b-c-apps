@@ -13,7 +13,7 @@ import {
 } from 'react-admin'
 import { useLocation } from 'react-router-dom'
 
-export const TodoItemCreate = () => {
+export const TodoItemCreate = ({ properties }) => {
   const notify = useNotify()
   const redirect = useRedirect()
   const location = useLocation()
@@ -24,10 +24,10 @@ export const TodoItemCreate = () => {
     notify('ra.notification.created')
     // get the initial values we set in the state earlier to know whether a userId was provided
     const record = getRecordFromLocation(location)
-    let wasItCreatedFromTheUserEditPage = record && record.userId
+    let wasItCreatedFromTheUserEditPage = record && record[properties.userId]
     if (wasItCreatedFromTheUserEditPage) {
       // the record was created from the edit view of the user, redirect to it
-      redirect(`/persons/${record.userId}`)
+      redirect(`/persons/${record[properties.userId]}`)
     } else {
       // redirect to the list of reviews
       redirect(`/todoitems`)
@@ -40,11 +40,11 @@ export const TodoItemCreate = () => {
   return (
     <Create mutationOptions={{ onSuccess }}>
       <SimpleForm>
-        <ReferenceInput source='userId' reference='persons'>
+        <ReferenceInput source={properties.userId} reference='persons'>
           <AutocompleteInput filterToQuery={filterToQuery} validate={required()} />
         </ReferenceInput>
-        <TextInput source='name' validate={[required()]} />
-        <BooleanInput source='isComplete' validate={[required()]} />
+        <TextInput source={properties.name} validate={[required()]} />
+        <BooleanInput source={properties.isComplete} validate={[required()]} />
       </SimpleForm>
     </Create>
   )
