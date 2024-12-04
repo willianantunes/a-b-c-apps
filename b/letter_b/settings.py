@@ -21,6 +21,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY")
 
+# https://docs.djangoproject.com/en/5.1/ref/settings/#append-slash
+APPEND_SLASH = False
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = strtobool(os.getenv("DJANGO_DEBUG", "False"))
 
@@ -90,7 +93,7 @@ TEMPLATES = [
 WSGI_APPLICATION = "letter_b.wsgi.application"
 
 REST_FRAMEWORK = {
-    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "DEFAULT_PAGINATION_CLASS": "letter_b.apps.example.api.pagination.PageNumberWithPageSizePagination",
     "PAGE_SIZE": int(os.getenv("PAGE_SIZE", 10)),
     "EXCEPTION_HANDLER": "letter_b.apps.example.api.global_exception_handler.exception_handler",
     "DEFAULT_AUTHENTICATION_CLASSES": (),
@@ -267,3 +270,14 @@ STOMP_SERVER_VHOST = os.getenv("STOMP_SERVER_VHOST", "/")
 
 # Broker
 CREATE_AUDIT_ACTION_DESTINATION = os.getenv("CREATE_AUDIT_ACTION_DESTINATION", "/queue/create-audit-action")
+
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS")
+
+if CORS_ALLOWED_ORIGINS:
+    INSTALLED_APPS.append("corsheaders")
+    MIDDLEWARE.insert(1, "corsheaders.middleware.CorsMiddleware")
+
+    if "," in CORS_ALLOWED_ORIGINS:
+        CORS_ALLOWED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS.split(",")]
+    else:
+        CORS_ALLOWED_ORIGINS = [CORS_ALLOWED_ORIGINS]

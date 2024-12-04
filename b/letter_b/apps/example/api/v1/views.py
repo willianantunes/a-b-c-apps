@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from django.conf import settings
 from django_stomp.builder import build_publisher
+from rest_framework import filters
 from rest_framework import status
 from rest_framework import viewsets
 from rest_framework.response import Response
@@ -68,8 +69,21 @@ class UserManagementAttributesAPIView(APIView):
 class PersonViewSet(viewsets.ModelViewSet):
     queryset = Person.objects.all()
     serializer_class = PersonSerializer
+    filter_backends = [filters.OrderingFilter, filters.SearchFilter]
+    search_fields = ["name"]
+    ordering_fields = "__all__"
+    ordering = ["created_at"]
 
 
 class TodoItemViewSet(viewsets.ModelViewSet):
-    queryset = TodoItem.objects.all()
     serializer_class = TodoItemSerializer
+    filter_backends = [filters.OrderingFilter]
+    ordering_fields = "__all__"
+    ordering = ["created_at"]
+
+    def get_queryset(self):
+        queryset = TodoItem.objects.all()
+        person = self.request.query_params.get("person")
+        if person is not None:
+            queryset = queryset.filter(person_id=person)
+        return queryset

@@ -13,6 +13,7 @@ requests = "*"
 django-stomp = "*"
 request-id-django-log = "*"
 python-json-logger = "*"
+django-cors-headers = "*"
 opentelemetry-sdk = "*"
 # https://github.com/open-telemetry/opentelemetry-python-contrib/tree/803bb322ba77bc2afb30fb9c31fb8cdde04fc8d6/instrumentation
 opentelemetry-instrumentation-django = "*"

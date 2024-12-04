@@ -6,7 +6,7 @@ from rest_framework.routers import DefaultRouter
 
 from letter_b.apps.example.api.v1 import views as views_v1
 
-router_v1 = DefaultRouter()
+router_v1 = DefaultRouter(trailing_slash=False)
 router_v1.register(r"persons", views_v1.PersonViewSet, basename="snippet")
 router_v1.register(r"todoitems", views_v1.TodoItemViewSet, basename="user")
 
