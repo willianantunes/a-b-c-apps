@@ -21,7 +21,8 @@ public class TodoItem : StandardEntity
             "Name",
             "IsComplete",
             "CreatedAt",
-            "UpdatedAt",            
+            "UpdatedAt",
+            "UserId",
             "Person",
             "Person:Name",
         ];

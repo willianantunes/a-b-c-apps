@@ -16,4 +16,3 @@ Observability tools are available at:
 - HyperDX: http://localhost:8090
 
 This project uses [NDjango Rest Framework](https://github.com/juntossomosmais/NDjango.RestFramework) to expose CRUD operations without generating boilerplate code.
-
