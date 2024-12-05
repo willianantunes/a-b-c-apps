@@ -1,0 +1,181 @@
+x-build: &dockerfile-dev-build
+  context: .
+  dockerfile: Dockerfile.dev
+
+services:
+  db-sqlserver:
+    image: "mcr.microsoft.com/mssql/server:2022-latest"
+    environment:
+      SA_PASSWORD: "Password1"
+      ACCEPT_EULA: "Y"
+      # Developer / Express / Standard / Enterprise  / EnterpriseCore
+      MSSQL_PID: Developer
+      MSSQL_TCP_PORT: 1433
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$$SA_PASSWORD" -Q "SELECT 1" -b -o /dev/null
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  db-postgresql:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_USER=postgres
+    ports:
+      - 5432:5432
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "pg_isready",
+          "--dbname=postgres",
+          "--username=postgres"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - 15672:15672
+    volumes:
+      - ./b/tests/resources/custom-rabbitmq-conf:/etc/rabbitmq/
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  letter-a:
+    build:
+      context: ./a
+      dockerfile: Dockerfile
+    env_file:
+      - a/.env.development
+    environment:
+      APPLY_MIGRATIONS: "true"
+      ALLOWED_ORIGINS: "http://localhost:3000,http://localhost:8000"
+      ConnectionStrings__AppDbContext: Data Source=db-sqlserver,1433;Initial Catalog=LetterA;User Id=sa;Password=Password1;TrustServerCertificate=True
+    ports:
+      - "8000:8000"
+    depends_on:
+      db-sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: curl --fail http://localhost:8000/api/healthcheck/readiness || exit 1
+      interval: 10s
+      timeout: 3s
+
+  letter-b:
+    build:
+      context: ./b
+      dockerfile: Dockerfile
+    env_file: b/.env
+    environment:
+      DJANGO_DEBUG: "False"
+      DB_HOST: "db-postgresql"
+    ports:
+      - "8080:8080"
+    depends_on:
+      db-postgresql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    command:
+      [
+        "./scripts/start-production.sh",
+      ]
+    healthcheck:
+      test: [ "CMD-SHELL", "python manage.py health_check -s readiness --skip-checks" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  letter-c:
+    build:
+      context: ./c
+      dockerfile: Dockerfile
+    env_file:
+      - c/.env
+    ports:
+      - "3000:3000"
+    depends_on:
+      letter-a:
+        condition: service_healthy
+      letter-b:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "node", "healthcheck.js"]
+      interval: 10s
+      timeout: 3s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.112.0
+    command: [ "--config=/etc/otel-collector-config.yml" ]
+    ports:
+      - "4318:4318"
+    volumes:
+      - ./a/otel-collector-config.yml:/etc/otel-collector-config.yml
+    depends_on:
+      hyperdx:
+        condition: service_healthy
+      jaeger-all-in-one:
+        condition: service_started
+      zipkin-all-in-one:
+        condition: service_started
+      prometheus:
+        condition: service_started
+
+  hyperdx:
+    image: hyperdx/hyperdx-local:1.10.0
+    environment:
+      HYPERDX_APP_PORT: 8090 # HyperDX UI (Next.js)
+      HYPERDX_API_PORT: 8091 # Private HyperDX API for the UI
+    ports:
+      - "8090:8080"
+      - "8091:8000"
+      - "4317:4317"
+    healthcheck:
+      test: curl --fail http://localhost:8000/health || exit 1
+      interval: 10s
+      timeout: 3s
+
+  jaeger-all-in-one:
+    image: jaegertracing/all-in-one:1.63.0
+    restart: always
+    ports:
+      - "16686:16686"
+      - "14268"
+      - "14250"
+    healthcheck:
+      test: [ "CMD", "nc", "-z", "localhost:14269" ]
+      interval: 1s
+      timeout: 3s
+      retries: 10
+
+  zipkin-all-in-one:
+    image: openzipkin/zipkin:3.4.2
+    environment:
+      - JAVA_OPTS=-Xms1024m -Xmx1024m -XX:+ExitOnOutOfMemoryError
+    restart: always
+    ports:
+      - "9411:9411"
+
+  prometheus:
+    image: prom/prometheus:v3.0.0
+    restart: always
+    volumes:
+      - ./a/prometheus.yaml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"

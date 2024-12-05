@@ -7,6 +7,7 @@ Execute `docker compose up app-production` to start API server in production mod
 - http://localhost:8080/api/healthcheck/integrations
 - http://localhost:8080/api/v1/
 - http://localhost:8080/api/v1/users/attributes
+- http://localhost:8080/admin
 
 Observability tools are available at:
 
