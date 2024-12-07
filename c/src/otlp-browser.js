@@ -48,7 +48,13 @@ providerWithZone.register({
 const startOtelInstrumentation = () => {
   registerInstrumentations({
     tracerProvider: providerWithZone,
-    instrumentations: [getWebAutoInstrumentations()],
+    instrumentations: [
+      getWebAutoInstrumentations({
+        '@opentelemetry/instrumentation-fetch': {
+          propagateTraceHeaderCorsUrls: /.*/, // Regex to match the services you want the header to be sent to
+        },
+      }),
+    ],
   })
 }
 

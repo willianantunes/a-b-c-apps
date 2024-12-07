@@ -281,3 +281,9 @@ if CORS_ALLOWED_ORIGINS:
         CORS_ALLOWED_ORIGINS = [origin for origin in CORS_ALLOWED_ORIGINS.split(",")]
     else:
         CORS_ALLOWED_ORIGINS = [CORS_ALLOWED_ORIGINS]
+
+    CORS_ALLOW_HEADERS = os.getenv("CORS_ALLOW_HEADERS")
+    if "," in CORS_ALLOW_HEADERS:
+        CORS_ALLOW_HEADERS = [header for header in CORS_ALLOW_HEADERS.split(",")]
+    else:
+        CORS_ALLOW_HEADERS = [CORS_ALLOW_HEADERS]
