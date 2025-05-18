@@ -3,15 +3,18 @@
 import os
 import sys
 
+from letter_b.support.django_helpers import eval_env_as_boolean
 from otlp import configure_opentelemetry
 
 
 def main():
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "letter_b.settings")
+
+    if eval_env_as_boolean("START_INSTRUMENT_ON_MANAGEPY", True):
+        configure_opentelemetry()
+
     try:
         from django.core.management import execute_from_command_line
-
-        configure_opentelemetry()
     except ImportError as exc:
         raise ImportError(
             "Couldn't import Django. Are you sure it's installed and "

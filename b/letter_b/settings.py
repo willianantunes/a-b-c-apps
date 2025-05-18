@@ -168,6 +168,7 @@ LOGGING = {
     "disable_existing_loggers": False,
     "filters": {
         "request_id": {"()": "request_id_django_log.filters.RequestIDFilter"},
+        "otel": {"()": "otlp.OtelFilter"},
         "redact_filter": {
             "()": "letter_b.support.logger.RedactingFilter",
             "patterns": ["cpf", "email", "birthday", "gender", "number", "emails", "username", "name", "phone"],
@@ -176,7 +177,7 @@ LOGGING = {
     "formatters": {
         "standard": {
             "()": JsonFormatter,
-            "format": "%(levelname)-8s [%(asctime)s] [%(request_id)s] %(name)s: %(message)s",
+            "format": "%(levelname)-8s [%(asctime)s] [%(request_id)s] %(name)s: %(message)s %(trace_id)s %(span_id)s",
         },
         "otlp": {
             "()": Formatter,
@@ -190,7 +191,7 @@ LOGGING = {
     "handlers": {
         "console": {
             "class": "logging.StreamHandler",
-            "filters": ["request_id", "redact_filter"],
+            "filters": ["request_id", "redact_filter", "otel"],
             "formatter": os.getenv("DEFAULT_LOG_FORMATTER", "standard"),
         },
         "otlp": {"class": "otlp.CustomLoggingHandler"},

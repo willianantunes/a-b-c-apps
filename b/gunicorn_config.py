@@ -9,15 +9,24 @@ import os
 
 from pythonjsonlogger.jsonlogger import JsonFormatter
 
+from gunicorn_custom_timeout import post_request_timeout
+from gunicorn_custom_timeout import pre_request_timeout
+from gunicorn_custom_timeout import worker_exit_timeout
+
 
 def post_fork(server, worker):
     """
     https://opentelemetry-python.readthedocs.io/en/stable/examples/fork-process-model/README.html#gunicorn-post-fork-hook
     """
-    server.log.info("Worker spawned (pid: %s)", worker.pid)
-    from otlp import configure_opentelemetry
+    from letter_b.support.django_helpers import eval_env_as_boolean
 
-    configure_opentelemetry()
+    if eval_env_as_boolean("START_INSTRUMENT_ON_GUNICORN_POST_FORK", True):
+        server.log.info("Worker spawned (pid: %s) - starting instrumentation", worker.pid)
+        from otlp import configure_opentelemetry
+
+        configure_opentelemetry()
+    else:
+        server.log.info("Worker spawned (pid: %s) - skipping instrumentation", worker.pid)
 
 
 bind = os.environ.get("DJANGO_BIND_ADDRESS", "0.0.0.0") + ":" + os.environ.get("DJANGO_BIND_PORT", "8000")
@@ -37,6 +46,10 @@ class CustomJsonFormatter(JsonFormatter):
     def format(self, record):
         """Formats a log record and serializes to json"""
         try:
+            if getattr(record, "otelSpanID", 0) != 0:
+                del record.otelSpanID
+            if getattr(record, "otelTraceID", 0) != 0:
+                del record.otelTraceID
             record.msg = json.loads(record.getMessage())
         except json.JSONDecodeError:
             pass
@@ -67,6 +80,8 @@ logconfig_dict = {
 # https://docs.gunicorn.org/en/stable/settings.html#access-log-format
 ip_address_header = os.getenv("GUNICORN_IP_ADDRESS_HEADER", "x-original-forwarded-for").lower()
 request_id_header = os.getenv("GUNICORN_REQUEST_ID_HEADER", "http_x_request_id").lower()
+span_id = os.getenv("OPENTELEMETRY_SPANID_HEADER", "span_id").lower()
+trace_id = os.getenv("OPENTELEMETRY_TRACEID_HEADER", "trace_id").lower()
 
 errorlog = "-"
 loglevel = os.getenv("GUNICORN_LOG_LEVEL", "info")
@@ -74,6 +89,12 @@ accesslog = "-"
 access_log_format = (
     f'{{"message": "%(r)s", "request_id": "%({{{request_id_header}}}o)s", '
     f'"http_status": %(s)s, "ip_address": "%({{{ip_address_header}}}i)s", '
+    f'"trace_id": "%({{{trace_id}}}o)s", "span_id": "%({{{span_id}}}o)s", '
     f'"response_length": "%(b)s", "referer": "%(f)s", "user_agent": "%(a)s", '
     f'"request_time": %(L)s, "date": "%(t)s"}}'
 )
+
+# The following adds a request timeout when using gevent workers
+pre_request = pre_request_timeout
+post_request = post_request_timeout
+worker_exit = worker_exit_timeout

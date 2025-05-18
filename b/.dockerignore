@@ -6,4 +6,4 @@
 !otlp.py
 !poetry*
 !pyproject.toml
-!gunicorn_config.py
+!gunicorn_*
